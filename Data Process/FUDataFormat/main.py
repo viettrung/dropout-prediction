@@ -17,9 +17,11 @@ def preprocessing():
 
     data = readFile()
 
-    print (data.columns)
+    print(data.columns)
 
     data.columns = generateColumnName()
+
+    print(data.columns)
 
     writeFile(data)
 
@@ -42,6 +44,7 @@ def getCourseList():
     for course in coursesTemp:
         course = course.replace(",", "")
         course = course.replace("_", "")
+        course = course.replace("\r", "")
         if len(course) > 0 :
             courses.append(course)
             print(course)
@@ -58,6 +61,8 @@ def generateColumnName():
     for course in courses:
         for attr in courseAttrs:
             columnTemp = attr + "_" + course
+            columnTemp = columnTemp.replace("\n", "")
+            columnTemp = columnTemp.replace("\r", "")
             newColumn.append(columnTemp)
             print(columnTemp)
     print(len(newColumn))
@@ -66,8 +71,7 @@ def generateColumnName():
 def writeFile(data):
     if not os.path.exists(Paths.result):
         os.makedirs(Paths.result)
-
-    data.to_csv(Paths.output_file, index=False)
+    data.to_csv(Paths.output_file, encoding="utf-8", index=False)
     print('Done')
 
 def main():
