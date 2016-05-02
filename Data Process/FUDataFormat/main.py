@@ -187,6 +187,7 @@ def csv2arffConvert(fileName, folderName):
     #write relation
     new_file.write('@relation Test_formated1-weka.filters.unsupervised.attribute.Remove-R1_clustered\n\n')
 
+    haveRollNumber = False
     #fill attribute type input
     for columnName in data.columns.values:
         # Check if column is_dropout -> nominal {no,yes} {0,1}
@@ -195,17 +196,24 @@ def csv2arffConvert(fileName, folderName):
                 attribute_type = '{0,1}'
             else:
                 attribute_type = '{no,yes}'
+            new_file.write('@attribute ' + columnName + ' ' + attribute_type + '\n')
         elif "Roll_Number" in columnName:
             attribute_type = 'string'
+            haveRollNumber = True
         else:
             attribute_type = 'numeric'
-        new_file.write('@attribute ' + columnName + ' ' + attribute_type + '\n')
+            new_file.write('@attribute ' + columnName + ' ' + attribute_type + '\n')
 
     #write data
     new_file.write('\n@data\n')
 
     for row in range(0, len(data.index) - 1):
         temp = data.iloc[row].tolist()
+
+        # Remove RollNumber if need
+        if haveRollNumber:    
+            del temp[0]
+
         temp1 = ','.join(map(str, temp))
         temp1 = temp1.replace("nan", "?")
         if row == len(data.index) - 1:
