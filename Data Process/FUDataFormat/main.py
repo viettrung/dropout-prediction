@@ -141,7 +141,17 @@ def getFileList(isCSV):
         if os.path.isdir(subDirs + "/" + file):
             pathName = os.listdir(subDirs + "/" + file)
             for file1 in pathName:
-                if not checkTempFile(file1):
+                if os.path.isdir(subDirs + "/" + file + '/' + file1):
+                    pathSubName = os.listdir(subDirs + "/" + file + '/' + file1)
+                    for file2 in pathSubName:
+                        if not checkTempFile(file2):
+                            if isCSV and checkCSV(file2):
+                                #convert csv to arff here
+                                csv2arffConvert(file + '/' + file1 + '/' + file2, file + '/' + file1)
+                            elif not isCSV and checkARFF(file2):
+                                #convert arff to csv here
+                                arff2csvConvert(file + '/' + file1 + '/' + file2, file + '/' + file1)
+                elif not checkTempFile(file1):
                     if isCSV and checkCSV(file1):
                         #convert csv to arff here
                         csv2arffConvert(file + '/' + file1, file)
@@ -166,13 +176,21 @@ def removeExtention(fileName):
     return os.path.splitext(fileName)[0]
 
 def checkIsDropoutType(data):
-    return data["Is_Dropout"][1] == 1 or data["Is_Dropout"][1] == 0
+    try:
+        return data["Is_Dropout"][1] == 1 or data["Is_Dropout"][1] == 0
+    except:
+        return False
+
 
 # Convert csv to arff
 def csv2arffConvert(fileName, folderName):
     filePath = Paths.csv_input + fileName
     if os.path.exists(filePath):
-        data = pd.read_csv(filePath, sep=",", encoding='utf-8', low_memory=False)
+        try:
+            data = pd.read_csv(filePath, sep=",", encoding='utf-8', low_memory=False)
+        except:
+            return
+
 
     if not os.path.exists(Paths.arff_output + folderName):
         os.makedirs(Paths.arff_output + folderName)
@@ -185,7 +203,7 @@ def csv2arffConvert(fileName, folderName):
     ##
 
     #write relation
-    new_file.write('@relation Test_formated1-weka.filters.unsupervised.attribute.Remove-R1_clustered\n\n')
+    new_file.write('@relation ' + fileName + '-weka.filters.unsupervised.attribute.Remove-R1\n\n')
 
     haveRollNumber = False
     #fill attribute type input
@@ -211,7 +229,7 @@ def csv2arffConvert(fileName, folderName):
         temp = data.iloc[row].tolist()
 
         # Remove RollNumber if need
-        if haveRollNumber:    
+        if haveRollNumber:
             del temp[0]
 
         temp1 = ','.join(map(str, temp))
