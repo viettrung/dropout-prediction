@@ -5,7 +5,6 @@ import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Discretize;
-import weka.filters.unsupervised.attribute.NumericToNominal;
 
 /*
  Decision Tree	-> J48
@@ -32,25 +31,25 @@ public class Classification {
 		// remove.setInputFormat(data);
 		// data = Filter.useFilter(data, rm);
 
-		// String[] options = new String[6];
-		// options[0] = "-B";
-		// options[1] = "10";
-		// options[2] = "-M";
-		// options[3] = "-1.0";
-		// options[4] = "-R";
-		// options[5] = "first-last";
+		String[] options = new String[6];
+		options[0] = "-B";
+		options[1] = "10";
+		options[2] = "-M";
+		options[3] = "-1.0";
+		options[4] = "-R";
+		options[5] = "first-last";
 
-		// Discretize filter = new Discretize();
-		// filter.setOptions(options);
-		// filter.setInputFormat(data);
+		Discretize filter = new Discretize();
+		filter.setOptions(options);
+		filter.setInputFormat(data);
 
-		String[] options = new String[2];
+		/*String[] options = new String[2];
 		options[0] = "-R";
 		options[1] = "first-last";
 
 		NumericToNominal filter = new NumericToNominal();
 		filter.setOptions(options);
-		filter.setInputFormat(data);
+		filter.setInputFormat(data);*/
 
 		Instances newData = Filter.useFilter(data, filter);
 
