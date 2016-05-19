@@ -3,7 +3,10 @@ import java.util.Random;
 import weka.classifiers.Classifier;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.evaluation.Evaluation;
+import weka.classifiers.functions.LibSVM;
+import weka.classifiers.functions.VotedPerceptron;
 import weka.core.Instances;
+import weka.core.Utils;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Discretize;
@@ -45,43 +48,78 @@ public class Classification {
 		filter.setOptions(options);
 		filter.setInputFormat(data);
 
-		/*String[] options = new String[2];
-		options[0] = "-R";
-		options[1] = "first-last";
-
-		NumericToNominal filter = new NumericToNominal();
-		filter.setOptions(options);
-		filter.setInputFormat(data);*/
+		/*
+		 * String[] options = new String[2]; options[0] = "-R"; options[1] =
+		 * "first-last";
+		 * 
+		 * NumericToNominal filter = new NumericToNominal();
+		 * filter.setOptions(options); filter.setInputFormat(data);
+		 */
 
 		Instances filterData = Filter.useFilter(data, filter);
 
 		int folds = 10;
 		int seed = 1;
 		// randomize data
-	    Random rand = new Random(seed);
-	    Instances crossValData = new Instances(filterData);
-	    crossValData.randomize(rand);
-	    if (crossValData.classAttribute().isNominal())
-	      crossValData.stratify(folds);
-	    
+		Random rand = new Random(seed);
+		Instances crossValData = new Instances(filterData);
+		crossValData.randomize(rand);
+		if (crossValData.classAttribute().isNominal())
+			crossValData.stratify(folds);
+
 		// perform cross-validation
-		Evaluation eval = new Evaluation(crossValData);
+		Evaluation evalNaiveBayes = new Evaluation(crossValData);
+		Evaluation evalSVM = new Evaluation(crossValData);
+		Evaluation evalNeuronNetwork = new Evaluation(crossValData);
 		for (int n = 0; n < folds; n++) {
 			Instances train = crossValData.trainCV(folds, n);
 			Instances test = crossValData.testCV(folds, n);
 
 			// build and evaluate classifier
+			// naive bayes
 			Classifier clsNaive = new NaiveBayes();
 			clsNaive.buildClassifier(train);
-			eval.evaluateModel(clsNaive, test);
+			evalNaiveBayes.evaluateModel(clsNaive, test);
+
+			// SVM
+			LibSVM clsSVM = new LibSVM();
+			clsSVM.setOptions(Utils
+					.splitOptions("-S 0 -K 2 -D 3 -G 0.0 -R 0.0 -N 0.5 -M 40.0 -C 1.0 -E 0.001 -P 0.1 "
+							+ "-model \"C:\\Program Files\\Weka-3-8\" -seed 1"));
+			clsSVM.buildClassifier(train);
+			evalSVM.evaluateModel(clsSVM, test);
+
+			// Neuron Network
+			// MultilayerPerceptron mlp = new MultilayerPerceptron();
+			// // L = Learning Rate
+			// // M = Momentum
+			// // N = Training Time or Epochs
+			// // H = Hidden Layers //
+			// mlp.setOptions(Utils
+			// .splitOptions("-L 0.1 -M 0.2 -N 2000 -V 0 -S 0 -E 20 -H 3"));
+			// mlp.buildClassifier(train);
+			// evalNeuronNetwork.evaluateModel(mlp, test);
+			VotedPerceptron vp = new VotedPerceptron();
+			vp.setOptions(Utils.splitOptions("-I 1 -E 1.0 -S 1 -M 10000"));
+			vp.buildClassifier(train);
+			evalNeuronNetwork.evaluateModel(vp, test);
 		}
 
 		// output evaluation
 		System.out.println();
 		System.out.println("=== Setup ===");
 		System.out.println("Dataset: " + data.relationName());
-		System.out.println(eval.toSummaryString());
-		System.out.println(eval.toClassDetailsString());
-		System.out.println(eval.toMatrixString());
+		System.out.println("=== Eval NaiveBayes ===");
+		System.out.println(evalNaiveBayes.toSummaryString());
+		System.out.println(evalNaiveBayes.toClassDetailsString());
+		System.out.println(evalNaiveBayes.toMatrixString());
+		System.out.println("=== Eval SVM ===");
+		System.out.println(evalSVM.toSummaryString());
+		System.out.println(evalSVM.toClassDetailsString());
+		System.out.println(evalSVM.toMatrixString());
+		System.out.println("=== Neuron Network ===");
+		System.out.println(evalNeuronNetwork.toSummaryString());
+		System.out.println(evalNeuronNetwork.toClassDetailsString());
+		System.out.println(evalNeuronNetwork.toMatrixString());
 	}
 }
