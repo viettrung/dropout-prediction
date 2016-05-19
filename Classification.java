@@ -6,6 +6,15 @@ import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Discretize;
 
+/*
+ Decision Tree	-> J48
+ K-nearest neighbor	-> iBK
+ Generalized Linear Regression -> LinearRegession
+ Naive Bayes	->  Naive Bayes
+ SVM	 -> LibSVM
+ Neural Network -> Multilayer Perceptron (VotedPerceptron)
+ */
+
 public class Classification {
 
 	public static void main(String[] args) throws Exception {
@@ -22,10 +31,9 @@ public class Classification {
 		// remove.setInputFormat(data);
 		// data = Filter.useFilter(data, rm);
 
-		int folds = 10;
 		String[] options = new String[6];
 		options[0] = "-B";
-		options[1] = "" + folds;
+		options[1] = "10";
 		options[2] = "-M";
 		options[3] = "-1.0";
 		options[4] = "-R";
@@ -37,6 +45,7 @@ public class Classification {
 
 		Instances newData = Filter.useFilter(data, filter);
 
+		int folds = 10;
 		// perform cross-validation
 		Evaluation eval = new Evaluation(newData);
 		for (int n = 0; n < folds; n++) {
