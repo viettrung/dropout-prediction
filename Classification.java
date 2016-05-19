@@ -1,3 +1,5 @@
+import java.util.Random;
+
 import weka.classifiers.Classifier;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.evaluation.Evaluation;
@@ -51,14 +53,22 @@ public class Classification {
 		filter.setOptions(options);
 		filter.setInputFormat(data);*/
 
-		Instances newData = Filter.useFilter(data, filter);
+		Instances filterData = Filter.useFilter(data, filter);
 
 		int folds = 10;
+		int seed = 1;
+		// randomize data
+	    Random rand = new Random(seed);
+	    Instances crossValData = new Instances(filterData);
+	    crossValData.randomize(rand);
+	    if (crossValData.classAttribute().isNominal())
+	      crossValData.stratify(folds);
+	    
 		// perform cross-validation
-		Evaluation eval = new Evaluation(newData);
+		Evaluation eval = new Evaluation(crossValData);
 		for (int n = 0; n < folds; n++) {
-			Instances train = newData.trainCV(folds, n);
-			Instances test = newData.testCV(folds, n);
+			Instances train = crossValData.trainCV(folds, n);
+			Instances test = crossValData.testCV(folds, n);
 
 			// build and evaluate classifier
 			Classifier clsNaive = new NaiveBayes();
