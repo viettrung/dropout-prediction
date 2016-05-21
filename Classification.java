@@ -71,6 +71,11 @@ public class Classification {
 		Evaluation evalNaiveBayes = new Evaluation(crossValData);
 		Evaluation evalSVM = new Evaluation(crossValData);
 		Evaluation evalNeuronNetwork = new Evaluation(crossValData);
+		
+		Evaluation evalDecisionTree = new Evaluation(crossValData);
+		Evaluation evalIBK = new Evaluation(crossValData);
+		Evaluation evalLR = new Evaluation(crossValData);
+		
 		for (int n = 0; n < folds; n++) {
 			Instances train = crossValData.trainCV(folds, n);
 			Instances test = crossValData.testCV(folds, n);
@@ -103,6 +108,29 @@ public class Classification {
 			vp.setOptions(Utils.splitOptions("-I 1 -E 1.0 -S 1 -M 10000"));
 			vp.buildClassifier(train);
 			evalNeuronNetwork.evaluateModel(vp, test);
+			
+			//Decision Tree
+			J48 j48 = new J48();
+			j48.setOptions(Utils.splitOptions("-C 0.25 -M 2"));
+			j48.buildClassifier(train);
+			evalDecisionTree.evaluateModel(j48, test);
+			
+			//K-nearest neighbor
+			IBk ibk = new IBk();
+			ibk.setOptions(Utils.splitOptions("-K 1 -W 0"));
+			LinearNNSearch linearSearch = new LinearNNSearch(train);
+			EuclideanDistance euclideanDistance = new EuclideanDistance(train);
+			euclideanDistance.setOptions(Utils.splitOptions("-R first-last"));
+			linearSearch.setDistanceFunction(euclideanDistance);
+			ibk.setNearestNeighbourSearchAlgorithm(linearSearch);
+			ibk.buildClassifier(train);
+			evalIBK.evaluateModel(ibk, test);
+			
+			//Generalized Linear Regression
+			LinearRegression linearRegression = new LinearRegression();
+			linearRegression.setOptions(Utils.splitOptions("-S 0 -R 1.0E-8 -num-decimal-places 4"));
+			linearRegression.buildClassifier(train);
+			evalLR.evaluateModel(linearRegression, test);
 		}
 
 		// output evaluation
@@ -121,5 +149,17 @@ public class Classification {
 		System.out.println(evalNeuronNetwork.toSummaryString());
 		System.out.println(evalNeuronNetwork.toClassDetailsString());
 		System.out.println(evalNeuronNetwork.toMatrixString());
+		System.out.println("=== Decision Tree ===");
+		System.out.println(evalDecisionTree.toSummaryString());
+		System.out.println(evalDecisionTree.toClassDetailsString());
+		System.out.println(evalDecisionTree.toMatrixString());
+		System.out.println("=== K-nearest neighbor ===");
+		System.out.println(evalIBK.toSummaryString());
+		System.out.println(evalIBK.toClassDetailsString());
+		System.out.println(evalIBK.toMatrixString());
+		System.out.println("=== Generalized Linear Regression ===");
+		System.out.println(evalLR.toSummaryString());
+		System.out.println(evalLR.toClassDetailsString());
+		System.out.println(evalLR.toMatrixString());
 	}
 }
