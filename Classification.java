@@ -127,10 +127,10 @@ public class Classification {
 			evalIBK.evaluateModel(ibk, test);
 			
 			//Generalized Linear Regression
-			LinearRegression linearRegression = new LinearRegression();
-			linearRegression.setOptions(Utils.splitOptions("-S 0 -R 1.0E-8 -num-decimal-places 4"));
-			linearRegression.buildClassifier(train);
-			evalLR.evaluateModel(linearRegression, test);
+			Logistic logistic = new Logistic();
+			logistic.setOptions(Utils.splitOptions("-R 1.0E-8 -M -1 -num-decimal-places 4"));
+			logistic.buildClassifier(train);
+			evalLR.evaluateModel(logistic, test);
 		}
 
 		// output evaluation
