@@ -163,7 +163,7 @@ def getFileList(isCSV):
                 print(file)
 
 def checkTempFile(temp):
-    return temp.startswith(".")
+    return temp.startswith(".") or temp.startswith("Icon")
 
 #Check extention
 def checkCSV(fileName):
@@ -181,7 +181,6 @@ def checkIsDropoutType(data):
     except:
         return False
 
-
 # Convert csv to arff
 def csv2arffConvert(fileName, folderName):
     filePath = Paths.csv_input + fileName
@@ -191,12 +190,14 @@ def csv2arffConvert(fileName, folderName):
         except:
             return
 
-
     if not os.path.exists(Paths.arff_output + folderName):
         os.makedirs(Paths.arff_output + folderName)
 
     print(Paths.arff_output + removeExtention(fileName))
 
+    writeArffTemplate(fileName, data)
+
+def writeArffTemplate(fileName, data):
     new_file = open(Paths.arff_output + removeExtention(fileName) + ".arff", 'w+')
     ##
     #following portions formats and writes to the new ARFF file
@@ -225,7 +226,7 @@ def csv2arffConvert(fileName, folderName):
     #write data
     new_file.write('\n@data\n')
 
-    for row in range(0, len(data.index) - 1):
+    for row in range(0, len(data.index)):
         temp = data.iloc[row].tolist()
 
         # Remove RollNumber if need
@@ -234,7 +235,7 @@ def csv2arffConvert(fileName, folderName):
 
         temp1 = ','.join(map(str, temp))
         temp1 = temp1.replace("nan", "?")
-        if row == len(data.index) - 1:
+        if row == len(data.index):
             new_file.write(temp1)
         else:
             new_file.write(temp1 + '\n')
@@ -290,6 +291,96 @@ def arff2csvConvert(fileName, folderName):
         new_file.write(row + "\n")
     new_file.close()
 
+def extractArffContent(fileName):
+    contents = []
+    header = []
+
+    filePath = fileName
+
+    if not os.path.exists(filePath):
+        print('File Not Found!!!')
+        return
+
+    with open(filePath,'r') as arffFile:
+        lines = arffFile.readlines()
+        for line in lines:
+            line = line.strip()
+            if len(line) > 0:
+                if line.startswith('@attribute'):
+                    #column
+                    header.append(line)
+                elif line.startswith("@relation") or line.startswith("@data"):
+                    #no no
+                    line.strip()
+                else:
+                    # content
+                    content = line.strip()
+                    contents.append(content)
+
+    return contents, header
+
+def mergeArffFile(file1, file2, dirFile, filePath):
+    contentFile1, headerFile1 = extractArffContent(file1)
+    contentFile2, headerFile2 = extractArffContent(file2)
+
+    content = contentFile1 + contentFile2
+
+    writeArffTemplate1(file1, headerFile1, content, filePath, dirFile)
+
+def writeArffTemplate1(fileName, header, data, filePath, dirFile):
+
+    if not os.path.exists(dirFile):
+        os.makedirs(dirFile)
+
+    new_file = open(filePath, 'w+')
+
+    print(filePath)
+
+    #write relation
+    new_file.write('@relation Weka.filters.unsupervised.attribute.Remove-R1\n\n')
+
+    #fill attribute type input
+    for columnName in header:
+        new_file.write(columnName + '\n')
+
+    #write data
+    new_file.write('\n@data\n')
+
+    for content in data:
+        new_file.write(content)
+        new_file.write('\n')
+
+    new_file.close()
+
+def getFileListForMerge(majorName):
+    subDirs = './data/ARFFConverted/major.' + str(majorName) + '/non-drop_student/clusters'
+    subDirsDrop = './data/ARFFConverted/major.' + str(majorName) + '/drop_student'
+    subDirsMerged = './data/ARFFConverted/major.' + str(majorName) + '/cluster_merged_student'
+
+    print(subDirs)
+
+    if not os.path.exists(subDirs):
+        os.makedirs(subDirs)
+        print('Input data not found, please put arff file in data/arff :)')
+        return
+
+    dirs = os.listdir(subDirs)
+    # This would print all the files and directories
+    for file in dirs:
+        # print(file)
+        if os.path.isdir(subDirs + "/" + file):
+            pathName = os.listdir(subDirs + "/" + file)
+            print('-' + subDirs + "/" + file)
+
+            dropFilePath = subDirsDrop + '/' + file + '.arff'
+
+            for file1 in pathName:
+                if not checkTempFile(file1):
+                    print('--' + subDirs + "/" + file + '/' + file1)
+                    clusterPath = subDirs + "/" + file + '/' + file1
+                    # Merge dropout and non dropout here...
+                    mergeArffFile(dropFilePath, clusterPath, subDirsMerged + '/' + file, subDirsMerged + '/' + file + '/' + file1)
+
 def main():
     oper = -1
     while int(oper) != 0:
@@ -299,6 +390,7 @@ def main():
         print('2 - Convert IS_DROP_OUT to YES/NO')
         print('3 - Convert CSV to ARFF')
         print('4 - Convert ARFF to CSV')
+        print('5 - Merge ARFF Files')
         print('0 - Exit')
         print('**************************************')
         oper = int(input("Enter your options: "))
@@ -321,6 +413,9 @@ def main():
             getFileList(False)
             end_time = time.time()
             print '(Time to convert: %s)' % (end_time - start_time)
+        elif oper == 5:
+            for i in range(1, 9):
+                getFileListForMerge(i)
 
 if __name__ == "__main__":
     main()
