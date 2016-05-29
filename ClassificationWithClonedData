@@ -1,0 +1,128 @@
+import weka.core.Attribute;
+import weka.core.Instance;
+import weka.core.Instances;
+import weka.core.converters.ConverterUtils.DataSource;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Created by dgvie on 5/29/2016.
+ */
+public class ClassificationWithCloneData {
+
+    // absolute path to 'ARFF Converted' folder
+    static final String BASE_FOLDER = "\\data\\ARFF Converted";
+
+    public static void main(String[] args) throws Exception {
+        File all_studentFolder;
+        File[] filesToRead;
+
+        File dataFolder = new File(BASE_FOLDER);
+        File[] majorsFolder = dataFolder.listFiles();
+        if (majorsFolder != null) {
+            for (File major : majorsFolder) {
+
+                if (major.isDirectory()) { // ignore hidden files like: Desktop.ini ...
+                    System.out.println("\n - " +  major.getPath());
+                    if (!major.getName().equals("major.5")) {
+                        all_studentFolder = new File(major.getPath() + "\\all_student");
+                        filesToRead = all_studentFolder.listFiles();
+                        for (File file : filesToRead) {
+                            if (file.getName().endsWith(".arff")) {
+                                execute(file);
+                            }
+                        }
+                    } else {
+                        System.out.println(" --> skipped ");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Processing .arff file.
+     * @param arffFile
+     * @throws Exception
+     */
+    private static void execute(File arffFile) throws Exception {
+        System.out.println("     - " + arffFile.getName());
+
+        DataSource source = new DataSource(arffFile.getAbsolutePath());
+        Instances data = source.getDataSet();
+
+        Attribute classAttribute = data.attribute("Is_Dropout");
+        data.setClass(classAttribute);
+
+        data.randomize(new java.util.Random(0));
+
+        int trainSize = (int) Math.round(data.numInstances() * 0.8);
+        int testSize = data.numInstances() - trainSize;
+
+        Instances trainData = new Instances(data, 0, trainSize);
+        Instances testData = new Instances(data, trainSize, testSize);
+
+        // equalizing drop & non-drop set
+        trainData = balancingTrainingData(trainData, classAttribute);
+
+        // run classification algorithms
+        classify(trainData, testData);
+
+    }
+
+    /**
+     * Run classification algorithms.
+     * @param trainData
+     * @param testData
+     */
+    private static void classify(Instances trainData, Instances testData) {
+        // TODO
+    }
+
+    /**
+     * balancing the number of drop out & non-dropout in training set.
+     * @param trainData
+     * @param classAttribute
+     * @return
+     */
+    private static Instances balancingTrainingData(Instances trainData, Attribute classAttribute) {
+        int numOfDrop = 0;
+        int numOfNonDrop = 0;
+        List<Instance> dropList = new ArrayList<Instance>();
+        List<Instance> nonDropList = new ArrayList<Instance>();
+
+        for (Instance i: trainData) {
+            if (i.value(classAttribute) == 0.0) {
+                numOfNonDrop++;
+                nonDropList.add(i);
+            } else {
+                dropList.add(i);
+                numOfDrop++;
+            }
+        }
+
+        int difference = numOfNonDrop - numOfDrop;
+
+        while (difference > 0 && dropList.size() > 0) {
+            for (Instance dropInstance : dropList) {
+                if (difference <= 0) {
+                    break;
+                }
+                difference--;
+                trainData.add(dropInstance);
+            }
+        }
+        while (difference < 0 && nonDropList.size() > 0) {
+            for (Instance nonDropInstance : nonDropList) {
+                if (difference >= 0) {
+                    break;
+                }
+                difference++;
+                trainData.add(nonDropInstance);
+            }
+        }
+        return trainData;
+    }
+}
